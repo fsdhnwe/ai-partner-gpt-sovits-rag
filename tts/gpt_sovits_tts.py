@@ -21,7 +21,7 @@ from config import TTSConfig
 nltk.download('averaged_perceptron_tagger_eng')
 
 class GPTSoVITSTTS:
-    """GPT-SoVITS TTS 語音合成器 - 雙模式"""
+    """GPT-SoVITS TTS 語音合成器"""
     
     def __init__(self, output_dir=None):
         """初始化 TTS 系統"""
@@ -45,7 +45,6 @@ class GPTSoVITSTTS:
           # 只有在原生 TTS 初始化失敗時才嘗試 API
         if not self.native_tts:
             print("原生 TTS 初始化失敗，嘗試 API 模式...")
-            self._check_api_connection()
     
     def _init_native_tts(self):
         """初始化原生 TTS 引擎"""
@@ -132,48 +131,36 @@ class GPTSoVITSTTS:
             print(f"原生 TTS 初始化失敗: {e}")
             self.native_tts = None
     
-    def _check_api_connection(self):
-        """檢查 API 連接"""
-        print("檢查 GPT-SoVITS API 連接...")
+    def synthesize(self, text, output_filename=None, output_path=None):
+        """
+        合成語音 (主入口)
         
-        # 嘗試多個可能的端口
-        ports_to_try = [9874, 9880, 9872]
-        
-        for port in ports_to_try:
-            try:
-                test_url = f"http://127.0.0.1:{port}"
-                response = requests.get(test_url, timeout=3)
-                
-                if response.status_code == 200:
-                    self.api_url = test_url
-                    print(f"API 連接成功! 端口: {port}")
-                    return
-            except:
-                pass
-        
-        print("無法連接到 GPT-SoVITS API")
-    
-    def synthesize(self, text, output_filename=None):
-        """合成語音 (主入口)"""
+        Args:
+            text: 要合成的文本
+            output_filename: 輸出文件名（可選）
+            output_path: 完整的輸出路徑（可選，優先級高於 output_filename）
+            
+        Returns:
+            str: 生成的音頻文件路徑
+        """
         # 清理文本
         text = self._clean_text(text)
         
-        # 生成輸出檔案名稱
-        if not output_filename:
-            timestamp = int(time.time())
-            output_filename = f"wednesday_tts_{timestamp}.wav"
-        
-        output_path = os.path.join(self.output_dir, output_filename)
+        # 確定輸出路徑
+        if output_path:
+            # 確保目錄存在
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            print(f"使用指定輸出路徑: {output_path}")
+        else:
+            # 生成輸出檔案名稱
+            if not output_filename:
+                timestamp = int(time.time())
+                output_filename = f"wednesday_tts_{timestamp}.wav"
+            output_path = os.path.join(self.output_dir, output_filename)
         
         # 優先使用原生 TTS
         if self.native_tts:
             result = self._synthesize_native(text, output_path)
-            if result:
-                return result
-        
-        # 如果原生 TTS 失敗，使用 API
-        if self.api_url:
-            result = self._synthesize_api(text, output_path)
             if result:
                 return result
         
@@ -239,48 +226,6 @@ class GPTSoVITSTTS:
             print(f"❌ 原生 TTS 合成失敗: {e}")
             return None
     
-    def _synthesize_api(self, text, output_path):
-        """使用 API 合成語音"""
-        try:
-            print(f"使用 API 合成: {text[:50]}...")
-            
-            # 自動檢測語言
-            text_lang = self._detect_language(text)
-            print(f"檢測到語言: {text_lang}")
-            
-            # 參考文本
-            reference_text = "…有那种东西才怪吧？！我要是真跟机器头说上话了倒还好，但现在的问题是…祂根本没有反应！"
-            
-            # HTTP GET 請求參數
-            params = {
-                "text": text,
-                "text_language": text_lang,
-                "refer_wav_path": self.reference_audio,
-                "prompt_text": reference_text,
-                "prompt_language": "zh"
-            }
-            
-            # 發送請求
-            start_time = time.time()
-            response = requests.get(self.api_url, params=params, timeout=30)
-            end_time = time.time()
-            
-            if response.status_code == 200:
-                print(f"API 請求成功! 耗時: {end_time - start_time:.2f} 秒")
-                
-                # 保存音頻檔案
-                with open(output_path, "wb") as f:
-                    f.write(response.content)
-                
-                print(f"音頻已保存: {output_path}")
-                return output_path
-            else:
-                print(f"API 請求失敗: {response.status_code}")
-                return None
-                
-        except Exception as e:
-            print(f"API 合成失敗: {e}")
-            return None
     
     def _detect_language(self, text):
         """自動檢測文本語言類型"""

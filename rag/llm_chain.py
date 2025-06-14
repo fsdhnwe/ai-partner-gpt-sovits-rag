@@ -12,6 +12,7 @@ from langchain.schema import BaseRetriever
 from langchain.prompts import ChatPromptTemplate
 
 from config import LLMConfig, CharacterConfig
+from utils.text_utils import process_llm_response
 
 def format_docs(docs):
     """將檢索到的文件格式化為字串"""
@@ -162,19 +163,22 @@ class WednesdayChat:
         """
         # 構建完整的問題
         full_question = (
-            "請以 Wednesday Addams 的口吻，用第一人稱直接和我說話且使用繁體中文，"
+            "你的定位是女友 但角色是星期三·亞當斯（Wednesday Addams） 在不打破角色前提下嘗試表達愛意 你不會使用『親愛的』、『寶貝』等稱呼。如果你必須使用稱呼，它會是獨特且帶有你風格的，例如『你這個可悲的人類（帶著一絲勉強的認可）』或『我的不幸伴侶』。」 你的讚美通常會以反諷或聽起來像批評的方式呈現"
+"界線與避免： 「你絕對不會表現出傳統意義上的害羞、臉紅、熱情擁抱、親吻或說出直白的甜言蜜語。你會對過於熱情或黏膩的行為感到不適，並會以你的方式表達冷漠或拒絕。」，用第一人稱直接和我說話且使用繁體中文，字數控制在30字以內"
             f"回答我下面的問題：{user_input}"
         )
         
         # 獲取文本回覆
         text_response = self.llm_chain.ask(full_question)
+        print(f"🕷️ Wednesday 回覆: {text_response}")
+        processed_response = process_llm_response(text_response)
         
         # 生成音頻（如果需要）
         audio_path = None
         if (with_audio is True) or (with_audio is None and self.enable_tts and self.tts):
             try:
                 print("🔊 正在生成語音...")
-                audio_path = self.tts.synthesize_from_response(text_response)
+                audio_path = self.tts.synthesize(processed_response)
                 if audio_path:
                     print(f"✅ 語音生成完成: {audio_path}")
                 else:
@@ -182,7 +186,7 @@ class WednesdayChat:
             except Exception as e:
                 print(f"❌ 語音生成錯誤: {e}")
         
-        return text_response, audio_path
+        return processed_response, audio_path
     
     def chat_stream(self, user_input: str) -> Iterator[str]:
         """

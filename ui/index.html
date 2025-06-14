@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wednesday AI Partner</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 側邊欄 */
+        .sidebar {
+            width: 250px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #8b5cf6;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 10px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: #9ca3af;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+        }
+
+        .nav-link i {
+            margin-right: 12px;
+            width: 16px;
+        }
+
+        /* 主要內容區 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* 聊天介面 */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-header h2 {
+            color: #8b5cf6;
+            margin-bottom: 5px;
+        }
+
+        .chat-status {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(139, 92, 246, 0.3) transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 3px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            line-height: 1.5;
+        }
+
+        .message-content-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message-content-wrapper span {
+            flex: 1;
+        }
+
+        .play-button {
+            padding: 6px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .play-button:hover {
+            background: rgba(139, 92, 246, 0.3);
+            transform: scale(1.1);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: rgba(55, 65, 81, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-content-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message-content .play-button {
+            padding: 6px;
+            border-radius: 50%;
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .message-content .play-button:hover {
+            background: rgba(139, 92, 246, 0.3);
+            transform: scale(1.1);
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin: 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            order: 1;
+        }
+
+        .message.assistant .message-avatar {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            max-width: 100%;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: rgba(55, 65, 81, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            color: #e0e0e0;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .send-button {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }        /* 設定介面 */
+        .settings-container {
+            padding: 30px;
+            max-width: 800px;
+            height: 100vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(139, 92, 246, 0.3) transparent;
+        }
+        
+        .settings-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .settings-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .settings-container::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 3px;
+        }
+
+        .settings-section {
+            background: rgba(55, 65, 81, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .settings-section h3 {
+            color: #8b5cf6;
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #d1d5db;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(31, 41, 55, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(55, 65, 81, 0.6);
+            color: #d1d5db;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(55, 65, 81, 0.8);
+        }
+
+        /* 載入動畫 */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #8b5cf6;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        .play-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .play-button:disabled:hover {
+            transform: none;
+            background: rgba(139, 92, 246, 0.2);
+        }
+
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+        }
+
+        /* 狀態指示器 */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.online {
+            background: #10b981;
+            box-shadow: 0 0 4px rgba(16, 185, 129, 0.4);
+        }
+
+        .status-indicator.offline {
+            background: #ef4444;
+        }
+
+        /* 音頻播放器 */
+        .audio-player {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-container">
+            <!-- 側邊欄 -->
+            <div class="sidebar">
+                <div class="logo">
+                    <h1>🕷️ Wednesday</h1>
+                    <p>AI Partner</p>
+                </div>
+                
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" :class="{ active: currentView === 'chat' }" @click="currentView = 'chat'">
+                            <i class="fas fa-comments"></i>
+                            聊天對話
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" :class="{ active: currentView === 'settings' }" @click="currentView = 'settings'">
+                            <i class="fas fa-cog"></i>
+                            系統設定
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 主要內容區 -->
+            <div class="main-content">
+                <!-- 聊天介面 -->
+                <div v-if="currentView === 'chat'" class="chat-container">
+                    <div class="chat-header">
+                        <h2>與 Wednesday 對話</h2>
+                        <div class="chat-status">
+                            <span class="status-indicator" :class="{ online: isOnline, offline: !isOnline }"></span>
+                            {{ isOnline ? '已連線' : '離線' }} | 模型: {{ currentModel }}
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" ref="messagesContainer">
+                        <div v-for="message in messages" :key="message.id" class="message" :class="message.type">
+                            <div class="message-avatar">
+                                {{ message.type === 'user' ? '👤' : '🕷️' }}
+                            </div>                            <div class="message-content">
+                                <div class="message-content-wrapper">
+                                    {{ message.content }}
+                                    
+                                    <button v-if="message.audioPath" 
+                                            class="play-button" 
+                                            @click="playAudio(message.audioPath)"
+                                            :disabled="message.audioStatus === 'generating'"
+                                            :title="getAudioButtonTitle(message.audioStatus)">
+                                        <i v-if="message.audioStatus === 'generating'" class="fas fa-spinner fa-spin"></i>
+                                        <i v-else class="fas fa-play"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="isTyping" class="message assistant">
+                            <div class="message-avatar">🕷️</div>
+                            <div class="message-content">
+                                <div class="loading"></div>
+                                Wednesday 正在思考中...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <div class="chat-input-wrapper">
+                            <input
+                                v-model="userInput"
+                                @keyup.enter="sendMessage"
+                                class="chat-input"
+                                placeholder="輸入訊息..."
+                                :disabled="isTyping"
+                            />
+                            <button
+                                @click="sendMessage"
+                                class="send-button"
+                                :disabled="isTyping || !userInput.trim()"
+                            >
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 設定介面 -->
+                <div v-if="currentView === 'settings'" class="settings-container">
+                    <div class="settings-section">
+                        <h3><i class="fas fa-robot"></i> AI 模型設定</h3>
+                        
+                        <div class="form-group">
+                            <label class="form-label">選擇 LLM 模型</label>
+                            <select v-model="settings.llmModel" class="form-select">
+                                <option value="deepseek-r1:latest">DeepSeek R1 (推薦)</option>
+                                <option value="llama3.2:latest">Llama 3.2</option>
+                                <option value="qwen2.5:latest">Qwen 2.5</option>
+                                <option value="gemma2:latest">Gemma 2</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">API 服務地址</label>
+                            <input v-model="settings.apiUrl" class="form-input" placeholder="http://localhost:11434" />
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3><i class="fas fa-microphone"></i> TTS 語音設定</h3>
+                        
+                        <div class="form-group">
+                            <label class="form-label">參考音頻路徑</label>
+                            <input v-model="settings.referenceAudio" class="form-input" placeholder="參考音頻檔案路徑" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">GPT 模型路徑</label>
+                            <input v-model="settings.gptModelPath" class="form-input" placeholder="GPT 模型檔案路徑" />
+                        </div>                        <div class="form-group">
+                            <label class="form-label">SoVITS 模型路徑</label>
+                            <input v-model="settings.sovitsModelPath" class="form-input" placeholder="SoVITS 模型檔案路徑" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">音頻輸出路徑</label>
+                            <input v-model="settings.outputPath" class="form-input" placeholder="output 資料夾路徑" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">自動播放語音</label>
+                            <select v-model="settings.autoPlayAudio" class="form-select">
+                                <option :value="true">啟用</option>
+                                <option :value="false">停用</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3><i class="fas fa-database"></i> RAG 資料庫設定</h3>
+                        
+                        <div class="form-group">
+                            <label class="form-label">文檔資料夾路徑</label>
+                            <input v-model="settings.documentsPath" class="form-input" placeholder="scripts 資料夾路徑" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">向量資料庫路徑</label>
+                            <input v-model="settings.vectorDbPath" class="form-input" placeholder="向量資料庫存放路徑" />
+                        </div>
+
+                        <button @click="rebuildDatabase" class="btn btn-secondary">
+                            <i class="fas fa-sync-alt"></i>
+                            重建向量資料庫
+                        </button>
+                    </div>
+
+                    <div class="settings-section">
+                        <button @click="saveSettings" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            儲存設定
+                        </button>
+                        
+                        <button @click="loadSettings" class="btn btn-secondary">
+                            <i class="fas fa-refresh"></i>
+                            重新載入設定
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="vue_app.js"></script>
+</body>
+</html>
