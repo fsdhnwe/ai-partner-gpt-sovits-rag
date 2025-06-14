@@ -1,0 +1,54 @@
+# Core dependencies
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-core>=0.1.0
+langchain-openai>=0.0.5
+langchain-huggingface>=0.0.1
+langchain-chroma>=0.1.0
+langchain-text-splitters>=0.0.1
+
+# Document processing
+pypdf>=4.0.0
+pymupdf>=1.23.0
+
+# Vector database
+chromadb>=0.4.0
+
+# Embeddings
+sentence-transformers>=2.2.0
+transformers>=4.30.0
+torch>=2.0.0
+
+# LLM backends
+openai>=1.0.0
+ollama>=0.1.0
+
+# UI frameworks
+gradio>=4.0.0
+streamlit>=1.28.0
+
+# Audio processing (for TTS)
+librosa>=0.10.0
+soundfile>=0.12.0
+pydub>=0.25.0
+
+# System utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0.0
+requests>=2.31.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Development utilities
+jupyter>=1.0.0
+ipython>=8.0.0
+
+# Optional TTS dependencies
+# 注意: 這些需要根據實際的 SoVITS 專案需求調整
+scipy>=1.10.0
+matplotlib>=3.7.0
+
+librosa==0.10.2 pytorch-lightning torchaudio transformers
+ffmpeg-python
+x-transformers
+gradio_client
